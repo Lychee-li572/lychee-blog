@@ -17,7 +17,11 @@ config:
           text: 博客
           link: /blog/
         -
-          theme: alt
-          text: Github →
-          link: https://baidu.com
+          theme: brand
+          text: 地图
+          link: /map/
+        # -
+          # theme: alt
+          # text: Github →
+          # link: https://baidu.com
 ---
