@@ -15,8 +15,6 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import * as echarts from 'echarts'
 import { useRouter } from 'vue-router'
 
-// VuePress 的页面里通常有 vue-router，但为避免极端情况下 setup 失败导致组件不渲染，
-// 这里对 useRouter 做一次兜底。
 let router: any = null
 try {
   router = useRouter()
@@ -30,8 +28,6 @@ const error = ref<string | null>(null)
 let chart: echarts.ECharts | null = null
 let onResize: (() => void) | null = null
 
-// Cities with photo pages are determined by existing markdown files:
-// docs/cities/<城市名>.md  ->  /cities/<城市名>/
 const cityMdModules = (import.meta as any).glob('../../cities/*.md') as Record<string, unknown>
 
 function extractCityName(mdPath: string) {
@@ -41,16 +37,53 @@ function extractCityName(mdPath: string) {
 
 const cityNames = computed(() => Object.keys(cityMdModules).map(extractCityName))
 
-// For cities missing in the remote dataset, keep a small fallback.
+// 城市到省份的映射（手动维护）
+const CITY_TO_PROVINCE: Record<string, string> = {
+  邢台: '河北',
+  宁波: '浙江',
+  三亚: '海南',
+  杭州: '浙江',
+  黄山: '安徽',
+}
+
+// 从城市列表构建省份->城市列表的映射
+const provinceCitiesMap = computed(() => {
+  const map = new Map<string, string[]>()
+  for (const city of cityNames.value) {
+    const province = CITY_TO_PROVINCE[city]
+    if (province) {
+      if (!map.has(province)) {
+        map.set(province, [])
+      }
+      map.get(province)!.push(city)
+    }
+  }
+  return map
+})
+
+// visitedProvinces：去过该省任意一个市就高亮
+const visitedProvinces = computed(() => {
+  const visited = new Set<string>()
+  for (const [province, cities] of provinceCitiesMap.value) {
+    for (const city of cities) {
+      if (cityNames.value.includes(city)) {
+        visited.add(province)
+        break
+      }
+    }
+  }
+  return visited
+})
+
 // [lon, lat]
 const CITY_FALLBACK_CP: Record<string, [number, number]> = {
   邢台: [114.508851, 37.0682],
   宁波: [121.544, 29.868],
   三亚: [109.508268, 18.247872],
   杭州: [120.153576, 30.287459],
+  黄山: [117.489, 29.817],
 }
 
-// Use local static files first to avoid CDN/network instability.
 const CHINA_MAP_URL = '/map-data/china.json'
 const CHINA_CITIES_URL = '/map-data/china-cities.json'
 
@@ -71,6 +104,19 @@ function render() {
     const cp = cityCpByName.get(city) ?? CITY_FALLBACK_CP[city]
     if (!cp) continue
     activePoints.push({ name: city, value: cp })
+  }
+
+  const visited = visitedProvinces.value
+  const regions: echarts.RegionObject[] = []
+  for (const [provinceName] of provinceCitiesMap.value) {
+    regions.push({
+      name: provinceName,
+      itemStyle: {
+        areaColor: visited.has(provinceName)
+          ? 'rgba(52, 156, 255, 0.3)'
+          : '#141C2B',
+      },
+    })
   }
 
   const option: echarts.EChartsOption = {
@@ -97,6 +143,7 @@ function render() {
           areaColor: '#1B2740',
         },
       },
+      regions,
     },
     series: [
       {
@@ -114,7 +161,7 @@ function render() {
         },
         data: activePoints,
         itemStyle: {
-          color: 'rgba(52, 156, 255, 0.35)', // 浅蓝：有照片文件的城市
+          color: 'rgba(52, 156, 255, 0.35)',
           borderColor: 'rgba(52, 156, 255, 0.55)',
           borderWidth: 1.5,
           shadowBlur: 8,
@@ -122,7 +169,7 @@ function render() {
         },
         emphasis: {
           itemStyle: {
-            color: 'rgba(0, 89, 255, 0.9)', // 深蓝：鼠标悬停在“亮的区域”上
+            color: 'rgba(0, 89, 255, 0.9)',
             borderColor: 'rgba(0, 89, 255, 1)',
             borderWidth: 2.2,
             shadowBlur: 14,
@@ -149,7 +196,6 @@ function setupEvents() {
     if (!city) return
 
     const url = `/cities/${city}/`
-    // Click -> jump to city page (prefer vue-router, fallback to full navigation)
     if (router?.push) router.push(url).catch(() => {})
     else window.location.href = url
   })
@@ -167,14 +213,13 @@ onMounted(async () => {
     const chinaMap = await fetchJson<any>(CHINA_MAP_URL)
     echarts.registerMap('china', chinaMap)
 
-    // Parse city center points (best-effort).
     try {
       const chinaCities = await fetchJson<any>(CHINA_CITIES_URL)
       const features = (chinaCities as any)?.features
       if (Array.isArray(features)) {
         for (const f of features) {
-          const name: unknown = f?.properties?.name
-          const cp: unknown = f?.properties?.cp
+          const name: unknown = f?.p?.n
+          const cp: unknown = f?.p?.c
           if (typeof name !== 'string') continue
           if (!Array.isArray(cp) || cp.length < 2) continue
           const lon = Number(cp[0])
@@ -184,13 +229,9 @@ onMounted(async () => {
         }
       }
     } catch (e) {
-      // Ignore city dataset failures; we can still render active cities using fallback CP.
-      // eslint-disable-next-line no-console
       console.warn(e)
     }
   } catch (e: any) {
-    // If china map fails, skip render to avoid ECharts geo errors.
-    // eslint-disable-next-line no-console
     console.error(e)
     error.value = '地图加载失败。请确认本地 map 数据文件存在：/map-data/china.json'
   } finally {
