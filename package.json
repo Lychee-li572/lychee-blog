@@ -11,7 +11,8 @@
     "dev": "vuepress dev docs --port 8086",
     "docs:dev-clean": "vuepress dev docs --clean-cache --clean-temp",
     "docs:preview": "http-server docs/.vuepress/dist",
-    "vp-update": "pnpm dlx vp-update"
+    "vp-update": "pnpm dlx vp-update",
+    "deploy": "pnpm run docs:build"
   },
   "devDependencies": {
     "@vuepress/bundler-vite": "2.0.0-rc.26",
