@@ -9,8 +9,14 @@
 .map-immersive-page .vp-page-meta,
 .map-immersive-page .vp-page-reading-time,
 .map-immersive-page .vp-doc hr:first-of-type,
-.map-immersive-page .vp-doc > hr:first-of-type {
+.map-immersive-page .vp-doc > hr:first-of-type,
+.map-immersive-page .vp-doc .vp-page-meta,
+.map-immersive-page [class*="page-meta"],
+.map-immersive-page [class*="reading-time"],
+.map-immersive-page .vp-doc-meta {
   display: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 /* Remove article container constraints so map can bleed full screen */
@@ -19,12 +25,29 @@
 .map-immersive-page .vp-page-main,
 .map-immersive-page .vp-page-content,
 .map-immersive-page .theme-plume-content,
-.map-immersive-page .theme-plume-content > div {
+.map-immersive-page .theme-plume-content > div,
+.map-immersive-page .vp-doc > .vp-page-meta {
   max-width: none !important;
   width: 100% !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
   margin: 0 !important;
   background: #070b14 !important;
+}
+
+.map-immersive-page .vp-doc > div {
+  display: flex;
+  flex-direction: column;
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: none !important;
+}
+
+.map-immersive-page .vp-doc {
+  padding: 0 !important;
+}
+
+.map-immersive-page .vp-doc-container.has-aside {
+  padding: 10px 32px 0 !important;
 }
 
