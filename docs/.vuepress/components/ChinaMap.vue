@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import * as echarts from 'echarts'
 import { useRouter } from 'vue-router'
 
@@ -28,60 +28,41 @@ const error = ref<string | null>(null)
 let chart: echarts.ECharts | null = null
 let onResize: (() => void) | null = null
 
-const cityMdModules = (import.meta as any).glob('../../cities/*.md') as Record<string, unknown>
+const cityNames = ['ningbo', 'huangshan', 'sanya', 'xingtai', 'hangzhou']
 
-function extractCityName(mdPath: string) {
-  const m = mdPath.match(/([^/\\]+)\.md$/)
-  return m ? m[1] : mdPath
-}
-
-const cityNames = computed(() => Object.keys(cityMdModules).map(extractCityName))
-
-// 城市到省份的映射（手动维护）
 const CITY_TO_PROVINCE: Record<string, string> = {
-  邢台: '河北',
-  宁波: '浙江',
-  三亚: '海南',
-  杭州: '浙江',
-  黄山: '安徽',
+  xingtai: '河北',
+  ningbo: '浙江',
+  sanya: '海南',
+  hangzhou: '浙江',
+  huangshan: '安徽',
 }
 
-// 从城市列表构建省份->城市列表的映射
-const provinceCitiesMap = computed(() => {
-  const map = new Map<string, string[]>()
-  for (const city of cityNames.value) {
-    const province = CITY_TO_PROVINCE[city]
-    if (province) {
-      if (!map.has(province)) {
-        map.set(province, [])
-      }
-      map.get(province)!.push(city)
+const provinceCitiesMap = new Map<string, string[]>()
+for (const city of cityNames) {
+  const province = CITY_TO_PROVINCE[city]
+  if (province) {
+    if (!provinceCitiesMap.has(province)) {
+      provinceCitiesMap.set(province, [])
     }
+    provinceCitiesMap.get(province)!.push(city)
   }
-  return map
-})
+}
 
-// visitedProvinces：去过该省任意一个市就高亮
-const visitedProvinces = computed(() => {
-  const visited = new Set<string>()
-  for (const [province, cities] of provinceCitiesMap.value) {
-    for (const city of cities) {
-      if (cityNames.value.includes(city)) {
-        visited.add(province)
-        break
-      }
-    }
+const visitedProvinces = new Set<string>()
+for (const city of cityNames) {
+  const province = CITY_TO_PROVINCE[city]
+  if (province) {
+    visitedProvinces.add(province)
   }
-  return visited
-})
+}
 
-// [lon, lat]
 const CITY_FALLBACK_CP: Record<string, [number, number]> = {
-  邢台: [114.508851, 37.0682],
-  宁波: [121.544, 29.868],
-  三亚: [109.508268, 18.247872],
-  杭州: [120.153576, 30.287459],
-  黄山: [117.489, 29.817],
+  xingtai: [114.508851, 37.0682],
+  ningbo: [121.544, 29.868],
+  sanya: [109.508268, 18.247872],
+  hangzhou: [120.153576, 30.287459],
+  huangshan: [117.489, 29.817],
 }
 
 const CHINA_MAP_URL = '/map-data/china.json'
@@ -100,19 +81,18 @@ function render() {
   if (!chart) return
 
   const activePoints: Array<{ name: string; value: Cp }> = []
-  for (const city of cityNames.value) {
+  for (const city of cityNames) {
     const cp = cityCpByName.get(city) ?? CITY_FALLBACK_CP[city]
     if (!cp) continue
     activePoints.push({ name: city, value: cp })
   }
 
-  const visited = visitedProvinces.value
   const regions: echarts.RegionObject[] = []
-  for (const [provinceName] of provinceCitiesMap.value) {
+  for (const [provinceName] of provinceCitiesMap) {
     regions.push({
       name: provinceName,
       itemStyle: {
-        areaColor: visited.has(provinceName)
+        areaColor: visitedProvinces.has(provinceName)
           ? 'rgba(52, 156, 255, 0.3)'
           : '#141C2B',
       },
@@ -195,7 +175,7 @@ function setupEvents() {
     const city = String(params?.name || '')
     if (!city) return
 
-    const url = `/cities/${city}/`
+    const url = `/myimg/${city}/`
     if (router?.push) router.push(url).catch(() => {})
     else window.location.href = url
   })

@@ -1,11 +1,9 @@
 ---
 title: 宁波
-permalink: /cities/宁波/
+permalink: /myimg/ningbo/
 ---
 
 # 宁波
-
-> 这里放置照片。
 
 <img src="https://cdn.jsdelivr.net/gh/Lychee-li572/blog-img@main/%E5%AE%81%E6%B3%A2/IMG20260326203645.jpg" alt="宁波-照片1" style="width:100%;max-width:500px;border-radius:8px;" />
 
