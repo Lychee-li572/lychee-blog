@@ -30,6 +30,18 @@ let onResize: (() => void) | null = null
 
 const cityNames = ['ningbo', 'huangshan', 'sanya', 'xingtai', 'hangzhou']
 
+const CITY_NAME_MAP: Record<string, string> = {
+  ningbo: '宁波',
+  huangshan: '黄山',
+  sanya: '三亚',
+  xingtai: '邢台',
+  hangzhou: '杭州',
+}
+
+const NAME_TO_CITY: Record<string, string> = Object.fromEntries(
+  Object.entries(CITY_NAME_MAP).map(([k, v]) => [v, k])
+)
+
 const CITY_TO_PROVINCE: Record<string, string> = {
   xingtai: '河北',
   ningbo: '浙江',
@@ -84,7 +96,7 @@ function render() {
   for (const city of cityNames) {
     const cp = cityCpByName.get(city) ?? CITY_FALLBACK_CP[city]
     if (!cp) continue
-    activePoints.push({ name: city, value: cp })
+    activePoints.push({ name: CITY_NAME_MAP[city] || city, value: cp })
   }
 
   const regions: echarts.RegionObject[] = []
@@ -176,7 +188,8 @@ function setupEvents() {
   chart.off('click')
   chart.on('click', (params: any) => {
     if (params?.seriesName !== 'activeCities') return
-    const city = String(params?.name || '')
+    const cnName = String(params?.name || '')
+    const city = NAME_TO_CITY[cnName] || cnName
     if (!city) return
 
     const url = `/myimg/${city}/`
