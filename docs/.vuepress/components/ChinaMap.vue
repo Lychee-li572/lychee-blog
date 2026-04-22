@@ -99,6 +99,10 @@ function render() {
     })
   }
 
+  const isMobile = window.innerWidth < 768
+  const zoom = isMobile ? 0.85 : 1.22
+  const roam = isMobile ? true : false
+
   const option: echarts.EChartsOption = {
     backgroundColor: 'transparent',
     tooltip: {
@@ -110,8 +114,8 @@ function render() {
     },
     geo: {
       map: 'china',
-      roam: false,
-      zoom: 1.22,
+      roam,
+      zoom,
       center: [104.5, 35.5],
       itemStyle: {
         areaColor: '#141C2B',
@@ -131,10 +135,10 @@ function render() {
         type: 'effectScatter',
         coordinateSystem: 'geo',
         symbol: 'circle',
-        symbolSize: 16,
+        symbolSize: isMobile ? 12 : 16,
         cursor: 'pointer',
         zlevel: 10,
-        showEffectOn: 'render',
+        showEffectOn: isMobile ? 'emphasis' : 'render',
         rippleEffect: {
           period: 3.5,
           scale: 3,
@@ -249,6 +253,15 @@ onBeforeUnmount(() => {
 .china-map {
   width: 100vw;
   height: calc(100vh - 64px);
+}
+
+@media (max-width: 767px) {
+  .china-map-wrap {
+    min-height: 50vh;
+  }
+  .china-map {
+    height: 50vh;
+  }
 }
 
 .china-map-loading {
