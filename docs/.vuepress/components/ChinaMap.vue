@@ -28,7 +28,7 @@ const error = ref<string | null>(null)
 let chart: echarts.ECharts | null = null
 let onResize: (() => void) | null = null
 
-const cityNames = ['ningbo', 'huangshan', 'sanya', 'xingtai', 'hangzhou']
+const cityNames = ['ningbo', 'huangshan', 'sanya', 'xingtai', 'hangzhou', 'nanning']
 
 const CITY_NAME_MAP: Record<string, string> = {
   ningbo: '宁波',
@@ -36,6 +36,7 @@ const CITY_NAME_MAP: Record<string, string> = {
   sanya: '三亚',
   xingtai: '邢台',
   hangzhou: '杭州',
+  nanning: '南宁',
 }
 
 const NAME_TO_CITY: Record<string, string> = Object.fromEntries(
@@ -48,6 +49,7 @@ const CITY_TO_PROVINCE: Record<string, string> = {
   sanya: '海南',
   hangzhou: '浙江',
   huangshan: '安徽',
+  nanning: '广西',
 }
 
 const provinceCitiesMap = new Map<string, string[]>()
@@ -75,6 +77,7 @@ const CITY_FALLBACK_CP: Record<string, [number, number]> = {
   sanya: [109.508268, 18.247872],
   hangzhou: [120.153576, 30.287459],
   huangshan: [117.489, 29.817],
+  nanning: [108.320004, 22.82402],
 }
 
 const CHINA_MAP_URL = '/map-data/china.json'
@@ -222,7 +225,8 @@ onMounted(async () => {
           const lon = Number(cp[0])
           const lat = Number(cp[1])
           if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue
-          cityCpByName.set(name, [lon, lat])
+          const cityKey = NAME_TO_CITY[name] || name
+          cityCpByName.set(cityKey, [lon, lat])
         }
       }
     } catch (e) {
